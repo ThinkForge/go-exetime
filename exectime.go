@@ -1,16 +1,14 @@
 package exectime
 
 import (
+	"fmt"
 	"os/exec"
 	"strconv"
 	"strings"
 	"time"
 )
 
-func exectime(folder string) (timeresult, error) {
-
-	// Store the time for each run.
-	var cutTimeArr, exTimeArr [5]int64
+func exectime(folder string) (int64, error) {
 
 	// Parse the filepath into slices and then get the files.
 	arr := strings.Split(folder, "/")
@@ -19,32 +17,42 @@ func exectime(folder string) (timeresult, error) {
 
 	// If either of the files could not be found, return the error.
 	if errCut != nil {
-		return timeresult{ratio: nil}, errCut
+		return 0, errCut
 	} else if errEx != nil {
-		return timeresult{ration: nil}, errEx
+		return 0, errEx
 	}
 
+	var ratios [5]int64
 	// For each of the input files we evaluate it using both executables.
 	for i := 0; i < 5; i++ {
-		cmd := exec.Command(pathCut, folder+strconv.Itoa(i)+".txt")
-		started := start()
-		cmd.Run()
-		time := end(started)
+		cmdCut := exec.Command(pathCut, folder+"input/"+strconv.Itoa(i)+".txt")
+		startCut := start()
+		cmdCut.Run()
+		cutTime := end(startCut)
 
-		result := timeresult{cutTime: time, exTime: time}
+		cmdEx := exec.Command(pathEx, folder+"input/"+strconv.Itoa(i)+".txt")
+		startEx := start()
+		cmdEx.Run()
+		exTime := end(startEx)
+		ratios[i] = (cutTime.Nanoseconds() / exTime.Nanoseconds())
+		fmt.Printf("Ex: %d CUT: %d\n", exTime.Nanoseconds(), cutTime.Nanoseconds())
 	}
-	return result, nil
+
+	var total int64 = 0
+	// Get the average ratio
+	for j := 0; j < 5; j++ {
+		total += ratios[j]
+	}
+
+	fmt.Printf("Total: %d Average: %d\n", total, total/5)
+
+	return total / 5, nil
 }
 
 func start() time.Time {
 	return time.Now()
 }
 
-func end(startTime time.Time) int64 {
-	endTime := time.Now()
-	return (endTime.Sub(startTime)).Nanoseconds()
-}
-
-type timeresult struct {
-	ratio [5]int64
+func end(startTime time.Time) time.Duration {
+	return time.Since(startTime)
 }

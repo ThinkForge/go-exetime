@@ -13,6 +13,6 @@ func TestExectime(t *testing.T) {
 		t.Fail()
 		t.Logf("Error thrown: " + err.Error())
 	} else {
-		t.Logf("Time: %d", res.cutTime)
+		t.Logf("Average Runtime Ratio: %d", res)
 	}
 }
